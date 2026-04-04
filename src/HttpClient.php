@@ -59,7 +59,7 @@ final class HttpClient
             'headers'         => [
                 'Accept'       => 'application/json, image/png, image/svg+xml, application/pdf',
                 'Content-Type' => 'application/json',
-                'User-Agent'   => 'avraapi/apix-php-sdk/1.0.0 PHP/' . PHP_VERSION,
+                'User-Agent'   => 'avraapi/php-sdk/1.0.0 PHP/' . PHP_VERSION,
             ],
         ]);
     }

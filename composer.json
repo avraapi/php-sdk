@@ -1,5 +1,5 @@
 {
-    "name": "avraapi/apix-php-sdk",
+    "name": "avraapi/php-sdk",
     "description": "Official PHP SDK for the APIX (AvraAPI) enterprise API gateway. Zero Laravel dependencies — works in any PHP 8.2+ project.",
     "version": "1.0.0",
     "type": "library",
