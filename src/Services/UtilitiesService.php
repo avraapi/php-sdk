@@ -164,8 +164,9 @@ final class UtilitiesService extends AbstractService
      * Provider: apix_html2pdf
      *
      * @param  string                                                                 $html
-     *   Raw HTML content to render (max 512 KB). Full <!DOCTYPE html> documents
-     *   and plain HTML fragments are both accepted.
+     *   Raw HTML content to render (max 512 KB after decoding). Full <!DOCTYPE html>
+     *   documents and plain HTML fragments are both accepted.
+     *   When $isBase64 is true, this must be a Base64-encoded HTML string.
      *
      * @param  string                                                                 $responseType
      *   'binary' — Returns BinaryResponse with raw PDF bytes (default).
@@ -179,6 +180,16 @@ final class UtilitiesService extends AbstractService
      *
      * @param  array{top?: float, right?: float, bottom?: float, left?: float}|null  $margins
      *   Custom page margins in millimetres. Keys: top, right, bottom, left.
+     *
+     * @param  bool                                                                   $isBase64
+     *   When true, the $html value is treated as a Base64-encoded HTML string.
+     *   The server decodes it before validation and rendering. Recommended for
+     *   complex templates with quotes, newlines, and special characters to
+     *   avoid JSON escaping issues.
+     *
+     * @param  bool                                                                   $privacyMode
+     *   When true, the raw HTML content and PDF metadata are excluded from
+     *   api_payload_logs. Use for sensitive documents (invoices, contracts, PII).
      *
      * @return ApiResponse|BinaryResponse
      *   - BinaryResponse when $responseType is 'binary'.
@@ -213,6 +224,16 @@ final class UtilitiesService extends AbstractService
      *   $response = $apix->utilities()->generatePdf($html, responseType: 'base64');
      *   $base64Pdf = $response->data['data'];
      *   file_put_contents('/tmp/invoice.pdf', base64_decode($base64Pdf));
+     *
+     *   // Pre-encoded Base64 HTML input:
+     *   $response = $apix->utilities()->generatePdf(
+     *       html:     base64_encode($complexHtml),
+     *       isBase64: true,
+     *   );
+     *   $response->saveAs('/tmp/invoice.pdf');
+     *
+     *   // Privacy mode (sensitive documents):
+     *   $response = $apix->utilities()->generatePdf($html, privacyMode: true);
      */
     public function generatePdf(
         string $html,
@@ -220,16 +241,83 @@ final class UtilitiesService extends AbstractService
         string $pageSize = 'A4',
         string $orientation = 'portrait',
         ?array $margins = null,
+        bool $isBase64 = false,
+        bool $privacyMode = false,
     ): ApiResponse|BinaryResponse {
         $payload = $this->compact([
             'html'          => $html,
+            'is_base64'     => $isBase64 ?: null, // omit if false to use server default
             'response_type' => $responseType,
             'page_size'     => $pageSize,
             'orientation'   => $orientation,
             'margins'       => $margins,
+            'privacy_mode'  => $privacyMode ?: null,
         ]);
 
         return $this->post('/utilities/pdf/generate', $payload);
+    }
+
+    /**
+     * Convert an HTML document to PDF using Base64 transport encoding.
+     *
+     * Convenience wrapper around generatePdf() that automatically Base64-encodes
+     * the raw HTML string. This is the recommended approach for complex templates
+     * containing quotes, newlines, inline CSS, or special characters — it avoids
+     * JSON escaping issues entirely.
+     *
+     * The server decodes the Base64 content before validation and rendering.
+     * The 512 KB size limit applies to the decoded HTML, not the encoded payload.
+     *
+     * @param  string                                                                 $html
+     *   Raw HTML content (NOT pre-encoded). This method encodes it for you.
+     *
+     * @param  string                                                                 $responseType
+     *   'binary' (default) | 'base64'
+     *
+     * @param  string                                                                 $pageSize
+     *   'A4' (default) | 'Letter' | 'Legal'
+     *
+     * @param  string                                                                 $orientation
+     *   'portrait' (default) | 'landscape'
+     *
+     * @param  array{top?: float, right?: float, bottom?: float, left?: float}|null  $margins
+     *   Custom page margins in millimetres.
+     *
+     * @param  bool                                                                   $privacyMode
+     *   Suppress payload storage in observability logs.
+     *
+     * @return ApiResponse|BinaryResponse
+     *
+     * @throws \Avraapi\Apix\Exceptions\ApixValidationException
+     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
+     * @throws \Avraapi\Apix\Exceptions\ApixInsufficientFundsException
+     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException
+     * @throws \Avraapi\Apix\Exceptions\ApixException
+     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException
+     *
+     * Example:
+     *   // Complex invoice template with inline CSS — no escaping worries:
+     *   $html = file_get_contents('/templates/invoice.html');
+     *   $response = $apix->utilities()->generatePdfFromBase64($html);
+     *   $response->saveAs('/tmp/invoice.pdf');
+     */
+    public function generatePdfFromBase64(
+        string $html,
+        string $responseType = 'binary',
+        string $pageSize = 'A4',
+        string $orientation = 'portrait',
+        ?array $margins = null,
+        bool $privacyMode = false,
+    ): ApiResponse|BinaryResponse {
+        return $this->generatePdf(
+            html:         base64_encode($html),
+            responseType: $responseType,
+            pageSize:     $pageSize,
+            orientation:  $orientation,
+            margins:      $margins,
+            isBase64:     true,
+            privacyMode:  $privacyMode,
+        );
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
