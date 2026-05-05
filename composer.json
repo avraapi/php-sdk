@@ -1,7 +1,7 @@
 {
     "name": "avraapi/php-sdk",
     "description": "Official PHP SDK for the APIX (AvraAPI) enterprise API gateway. Zero Laravel dependencies — works in any PHP 8.2+ project.",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "type": "library",
     "keywords": ["apix", "avraapi", "sms", "pdf", "qr", "barcode", "sdk", "api-gateway"],
     "license": "MIT",
