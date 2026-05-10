@@ -51,4 +51,21 @@ abstract class AbstractService
     ): ApiResponse|BinaryResponse {
         return $this->http->post($path, $payload, $headers);
     }
+
+    /**
+     * Dispatch a GET request via the shared HTTP client.
+     *
+     * Used by endpoints that accept path parameters instead of JSON bodies
+     * (e.g. currency conversion endpoints).
+     *
+     * @param  array<string, string>  $query    Optional query string parameters.
+     * @param  array<string, string>  $headers  Additional headers for this request only.
+     */
+    protected function get(
+        string $path,
+        array $query = [],
+        array $headers = [],
+    ): ApiResponse|BinaryResponse {
+        return $this->http->get($path, $query, $headers);
+    }
 }

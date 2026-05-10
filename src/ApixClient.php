@@ -6,7 +6,9 @@ namespace Avraapi\Apix;
 
 use Avraapi\Apix\Responses\ApiResponse;
 use Avraapi\Apix\Responses\BinaryResponse;
+use Avraapi\Apix\Services\CurrencyService;
 use Avraapi\Apix\Services\LocationService;
+use Avraapi\Apix\Services\SecurityService;
 use Avraapi\Apix\Services\SmsService;
 use Avraapi\Apix\Services\UtilitiesService;
 
@@ -32,6 +34,8 @@ use Avraapi\Apix\Services\UtilitiesService;
  *   $apix->location()   — IP geolocation lookup
  *   $apix->sms()        — SMS send / balance operations
  *   $apix->utilities()  — QR codes, barcodes, PDF generation
+ *   $apix->security()   — VPN/Proxy Shield, Burner Email Detection
+ *   $apix->currency()   — Multi-currency exchange rates & conversion
  *
  * ── Provider Override ─────────────────────────────────────────────────────────
  *
@@ -60,6 +64,8 @@ final class ApixClient
     private ?LocationService  $locationService  = null;
     private ?SmsService       $smsService       = null;
     private ?UtilitiesService $utilitiesService = null;
+    private ?SecurityService  $securityService  = null;
+    private ?CurrencyService  $currencyService  = null;
 
     /**
      * Create a new APIX client.
@@ -144,6 +150,45 @@ final class ApixClient
         return $this->utilitiesService ??= new UtilitiesService($this->http);
     }
 
+    /**
+     * Access the Security service group.
+     *
+     * Available operations:
+     *   checkVpn(string $ip): ApiResponse
+     *   checkBurnerEmail(string $email): ApiResponse
+     *
+     * Example:
+     *   $result = $apix->security()->checkVpn('8.8.8.8');
+     *   echo $result->data['is_vpn']; // false
+     *
+     *   $result = $apix->security()->checkBurnerEmail('user@mailinator.com');
+     *   echo $result->data['is_disposable']; // true
+     */
+    public function security(): SecurityService
+    {
+        return $this->securityService ??= new SecurityService($this->http);
+    }
+
+    /**
+     * Access the Currency service group.
+     *
+     * Available operations:
+     *   getCodes(): ApiResponse
+     *   getLatestRates(string $base): ApiResponse
+     *   getPairRate(string $base, string $target): ApiResponse
+     *   convert(string $base, string $target, float $amount): ApiResponse
+     *
+     * Example:
+     *   $codes = $apix->currency()->getCodes();
+     *   $rates = $apix->currency()->getLatestRates('USD');
+     *   $pair  = $apix->currency()->getPairRate('USD', 'EUR');
+     *   $conv  = $apix->currency()->convert('USD', 'LKR', 100.00);
+     */
+    public function currency(): CurrencyService
+    {
+        return $this->currencyService ??= new CurrencyService($this->http);
+    }
+
     // ── Universal Call ────────────────────────────────────────────────────────
 
     /**
@@ -183,9 +228,10 @@ final class ApixClient
         array $payload = [],
     ): ApiResponse|BinaryResponse {
         return match (strtoupper(trim($method))) {
+            'GET'  => $this->http->get($path, $payload),
             'POST' => $this->http->post($path, $payload),
             default => throw new \InvalidArgumentException(
-                "APIX SDK: Unsupported HTTP method '{$method}'. The APIX gateway uses POST for all operations."
+                "APIX SDK: Unsupported HTTP method '{$method}'. Supported methods: GET, POST."
             ),
         };
     }

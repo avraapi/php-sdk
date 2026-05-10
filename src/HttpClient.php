@@ -117,6 +117,58 @@ final class HttpClient
     }
 
     /**
+     * Execute a GET request and return a typed response.
+     *
+     * Used by endpoints that accept path parameters instead of JSON bodies
+     * (e.g. currency conversion endpoints).
+     *
+     * @param  array<string, string>  $query    Optional query string parameters.
+     * @param  array<string, string>  $headers  Additional per-request headers.
+     *
+     * @throws ApixException            On any API-level error.
+     * @throws ApixNetworkException     On transport-level failure.
+     */
+    public function get(
+        string $path,
+        array $query = [],
+        array $headers = [],
+    ): ApiResponse|BinaryResponse {
+        $uri           = $this->normalizePath($path);
+        $mergedHeaders = array_merge($this->buildAuthHeaders(), $headers);
+
+        if ($this->providerOverride !== null) {
+            $mergedHeaders['X-Provider-Override'] = $this->providerOverride;
+            $this->providerOverride = null;
+        }
+
+        try {
+            $response = $this->guzzle->get($uri, [
+                RequestOptions::HEADERS => $mergedHeaders,
+                RequestOptions::QUERY   => $query,
+            ]);
+        } catch (ConnectException $e) {
+            throw new ApixNetworkException(
+                message:  "Could not connect to APIX gateway at '{$uri}'. " .
+                          "Check APIX_BASE_URL and ensure the server is reachable. " .
+                          "Original error: " . $e->getMessage(),
+                previous: $e,
+            );
+        } catch (RequestException $e) {
+            if ($e->hasResponse()) {
+                /** @var ResponseInterface $failResponse */
+                $failResponse = $e->getResponse();
+                return $this->handleResponse($failResponse);
+            }
+            throw new ApixNetworkException(
+                message:  'APIX request failed without a server response: ' . $e->getMessage(),
+                previous: $e,
+            );
+        }
+
+        return $this->handleResponse($response);
+    }
+
+    /**
      * Set a provider override header for the next request only.
      *
      * Called by the fluent withProvider() chain on Service classes.
