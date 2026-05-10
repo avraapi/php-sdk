@@ -4,6 +4,8 @@ Official PHP SDK for the [AvraAPI (APIX)](https://avraapi.com) enterprise API ga
 
 Zero Laravel dependencies — works in any PHP 8.2+ project.
 
+> **Full documentation & guides:** [https://avraapi.com/developers/sdks](https://avraapi.com/developers/sdks)
+
 ```bash
 composer require avraapi/php-sdk
 ```
@@ -27,6 +29,8 @@ $apix = new ApixClient([
 | Location | `$apix->location()` | IP geolocation lookups |
 | SMS | `$apix->sms()` | Single, bulk-same, bulk-different, balance |
 | Utilities | `$apix->utilities()` | QR codes, barcodes, **PDF generation** |
+| Security | `$apix->security()` | VPN & Proxy Shield, Burner Email Detection |
+| Currency | `$apix->currency()` | Currency codes, live rates, pair rates, conversion |
 
 ---
 
@@ -136,6 +140,107 @@ file_put_contents('/tmp/invoice.pdf', base64_decode($response->data['data']));
 
 ---
 
+## VPN & Proxy Shield
+
+Detect VPNs, proxies, Tor exit nodes, iCloud Private Relay, and hosting/datacenter IPs.
+
+```php
+$result = $apix->security()->checkVpn('8.8.8.8');
+
+echo $result->data['ip_address'];    // '8.8.8.8'
+echo $result->data['is_vpn'];        // false
+echo $result->data['is_proxy'];      // false
+echo $result->data['is_tor'];        // false
+echo $result->data['is_relay'];      // false
+echo $result->data['is_hosting'];    // false
+echo $result->data['country_code'];  // 'US'
+echo $result->data['city'];          // 'Mountain View'
+echo $result->data['asn'];           // '15169'
+echo $result->data['network_name'];  // 'Google LLC'
+echo $result->data['provider_name']; // 'vpnapi' or 'iplocate'
+
+// Quick threat check:
+$d = $result->data;
+$isThreat = $d['is_vpn'] || $d['is_proxy'] || $d['is_tor'];
+```
+
+---
+
+## Burner Email Shield
+
+Detect temporary and disposable email addresses using a dual-list Redis lookup (7,000+ domains).
+
+```php
+$result = $apix->security()->checkBurnerEmail('user@mailinator.com');
+
+echo $result->data['email'];             // 'user@mailinator.com'
+echo $result->data['domain'];            // 'mailinator.com'
+echo $result->data['is_valid_syntax'];   // true
+echo $result->data['is_disposable'];     // true
+echo $result->data['source'];            // 'global', 'custom', or 'none'
+echo $result->data['execution_time_ms']; // 0.42
+
+// Guard a registration form:
+if ($result->data['is_disposable']) {
+    throw new \Exception('Disposable emails are not allowed.');
+}
+```
+
+---
+
+## Multi-Currency Rates & Conversion
+
+Free currency exchange rate API — 160+ currencies, 2-hour cached rates, zero credit cost.
+
+### Get All Currency Codes
+
+```php
+$result = $apix->currency()->getCodes();
+
+echo $result->data['count']; // 161
+foreach ($result->data['codes'] as $c) {
+    echo "{$c['code']} — {$c['name']}\n"; // 'USD — United States Dollar'
+}
+```
+
+### Get Latest Rates from a Base Currency
+
+```php
+$result = $apix->currency()->getLatestRates('USD');
+
+echo $result->data['base'];              // 'USD'
+echo $result->data['last_updated'];      // '2025-05-10T...'
+echo $result->data['rates']['EUR'];      // 0.89123456
+echo $result->data['rates']['LKR'];      // 298.50000000
+```
+
+### Get Pair Rate
+
+```php
+$result = $apix->currency()->getPairRate('USD', 'EUR');
+
+echo $result->data['base'];         // 'USD'
+echo $result->data['target'];       // 'EUR'
+echo $result->data['rate'];         // 0.89123456
+echo $result->data['last_updated']; // '2025-05-10T...'
+```
+
+### Convert an Amount
+
+```php
+$result = $apix->currency()->convert('USD', 'LKR', 100.00);
+
+$d = $result->data;
+echo "{$d['amount']} {$d['base']} = {$d['conversion_result']} {$d['target']}";
+// "100 USD = 29850.000000 LKR"
+
+echo $d['rate'];              // 298.50000000
+echo $d['conversion_result']; // 29850.000000
+echo $d['last_updated'];      // '2025-05-10T...'
+```
+
+---
+
 ## Privacy Mode
 
 For sensitive documents (invoices, contracts, PII), enable privacy mode to exclude HTML content from observability logs:
@@ -178,6 +283,14 @@ try {
     echo "[{$e->getErrorCode()}] {$e->getMessage()}";
 }
 ```
+
+---
+
+## Documentation
+
+For full API reference, usage guides, and interactive examples, visit:
+
+**[https://avraapi.com/developers/sdks](https://avraapi.com/developers/sdks)**
 
 ---
 
