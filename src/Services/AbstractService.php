@@ -39,6 +39,30 @@ abstract class AbstractService
     }
 
     /**
+     * Enable AvraAPI Privacy Mode for the next service request only.
+     *
+     * The SDK sends `X-Privacy-Mode: 1`, then automatically clears the flag
+     * after that request is dispatched. Privacy Mode preserves normal routing,
+     * billing, and usage tracking while suppressing request and response
+     * payload storage according to the platform privacy guarantee.
+     *
+     * Example:
+     *   $response = $apix->security()
+     *       ->withPrivacyMode()
+     *       ->checkBurnerEmail('customer@example.com');
+     *
+     * @return static Fluent — returns the same service instance.
+     *
+     * @api
+     */
+    public function withPrivacyMode(): static
+    {
+        $this->http->enablePrivacyMode();
+
+        return $this;
+    }
+
+    /**
      * Dispatch a POST request via the shared HTTP client.
      *
      * @param  array<string, mixed>  $payload  JSON request body.

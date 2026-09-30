@@ -54,6 +54,11 @@ final class HttpClient
      */
     private ?string $providerOverride = null;
 
+    /**
+     * Per-request privacy-mode header flag (reset after each request).
+     */
+    private bool $privacyModeEnabled = false;
+
     public function __construct(private readonly Config $config)
     {
         $this->guzzle = new GuzzleClient([
@@ -85,12 +90,7 @@ final class HttpClient
         array $headers = [],
     ): ApiResponse|BinaryResponse {
         $uri = $this->normalizePath($path);
-        $mergedHeaders = array_merge($this->buildAuthHeaders(), $headers);
-
-        if ($this->providerOverride !== null) {
-            $mergedHeaders['X-Provider-Override'] = $this->providerOverride;
-            $this->providerOverride = null; // Consume after single use
-        }
+        $mergedHeaders = $this->buildRequestHeaders($headers);
 
         try {
             $response = $this->guzzle->post($uri, [
@@ -139,12 +139,7 @@ final class HttpClient
         array $headers = [],
     ): ApiResponse|BinaryResponse {
         $uri = $this->normalizePath($path);
-        $mergedHeaders = array_merge($this->buildAuthHeaders(), $headers);
-
-        if ($this->providerOverride !== null) {
-            $mergedHeaders['X-Provider-Override'] = $this->providerOverride;
-            $this->providerOverride = null;
-        }
+        $mergedHeaders = $this->buildRequestHeaders($headers);
 
         try {
             $response = $this->guzzle->get($uri, [
@@ -183,11 +178,7 @@ final class HttpClient
     public function put(string $path, array $payload = [], array $headers = []): ApiResponse|BinaryResponse
     {
         $uri = $this->normalizePath($path);
-        $mergedHeaders = array_merge($this->buildAuthHeaders(), $headers);
-        if ($this->providerOverride !== null) {
-            $mergedHeaders['X-Provider-Override'] = $this->providerOverride;
-            $this->providerOverride = null;
-        }
+        $mergedHeaders = $this->buildRequestHeaders($headers);
         try {
             $response = $this->guzzle->put($uri, [
                 RequestOptions::HEADERS => $mergedHeaders,
@@ -219,6 +210,19 @@ final class HttpClient
     public function setProviderOverride(string $providerCode): void
     {
         $this->providerOverride = $providerCode;
+    }
+
+    /**
+     * Enable X-Privacy-Mode for the next request only.
+     *
+     * Called by the fluent withPrivacyMode() chain on service classes.
+     * Automatically cleared after the request is dispatched.
+     *
+     * @internal
+     */
+    public function enablePrivacyMode(): void
+    {
+        $this->privacyModeEnabled = true;
     }
 
     // ── Response handling ─────────────────────────────────────────────────────
@@ -353,6 +357,29 @@ final class HttpClient
             'X-API-SECRET' => $this->config->apiSecret,
             'X-ENV' => $this->config->env,
         ];
+    }
+
+    /**
+     * Merge authentication, caller-supplied, and one-shot service headers.
+     *
+     * @param  array<string, string>  $headers
+     * @return array<string, string>
+     */
+    private function buildRequestHeaders(array $headers): array
+    {
+        $mergedHeaders = array_merge($this->buildAuthHeaders(), $headers);
+
+        if ($this->providerOverride !== null) {
+            $mergedHeaders['X-Provider-Override'] = $this->providerOverride;
+            $this->providerOverride = null;
+        }
+
+        if ($this->privacyModeEnabled) {
+            $mergedHeaders['X-Privacy-Mode'] = '1';
+            $this->privacyModeEnabled = false;
+        }
+
+        return $mergedHeaders;
     }
 
     // ── Utility helpers ───────────────────────────────────────────────────────

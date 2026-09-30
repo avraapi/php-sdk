@@ -51,10 +51,12 @@ final class LocationService extends AbstractService
      */
     public function lookupIp(string $ip, bool $privacyMode = false): ApiResponse
     {
-        $headers = $privacyMode ? ['X-Privacy-Mode' => '1'] : [];
+        if ($privacyMode) {
+            $this->withPrivacyMode();
+        }
 
         /** @var ApiResponse $response */
-        $response = $this->post('/location/lookup', ['ip' => $ip], $headers);
+        $response = $this->post('/location/lookup', ['ip' => $ip]);
 
         return $response;
     }

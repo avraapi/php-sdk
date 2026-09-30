@@ -38,7 +38,8 @@ final class UtilitiesService extends AbstractService
      * @param  string|null  $backgroundColor  6-digit hex color for background.
      * @param  string|null  $logoUrl  Publicly reachable logo URL to embed at center.
      * @param  int|null  $logoSizePercent  Logo size as % of QR image (5–40).
-     * @param  bool  $privacyMode  Suppress payload storage in observability logs.
+     * @param  bool  $privacyMode  When true, sends X-Privacy-Mode: 1 to
+     *                             suppress payload storage in observability logs.
      * @return ApiResponse|BinaryResponse
      *                                    - Returns BinaryResponse when $format is 'png' or 'svg'.
      *                                    - Returns ApiResponse    when $format is 'base64'.
@@ -81,6 +82,10 @@ final class UtilitiesService extends AbstractService
         ?int $logoSizePercent = null,
         bool $privacyMode = false,
     ): ApiResponse|BinaryResponse {
+        if ($privacyMode) {
+            $this->withPrivacyMode();
+        }
+
         $payload = $this->compact([
             'data' => $data,
             'format' => $format,
@@ -89,7 +94,6 @@ final class UtilitiesService extends AbstractService
             'background_color' => $backgroundColor,
             'logo_url' => $logoUrl,
             'logo_size_percent' => $logoSizePercent,
-            'privacy_mode' => $privacyMode ?: null, // omit if false to use server default
         ]);
 
         return $this->post('/utilities/qr/generate', $payload);
@@ -112,7 +116,8 @@ final class UtilitiesService extends AbstractService
      * @param  string  $format  'png' or 'svg' (default: 'png').
      * @param  int|null  $height  Barcode height in pixels (20–300).
      * @param  float|null  $widthFactor  Horizontal bar width multiplier (1–4).
-     * @param  bool  $privacyMode  Suppress payload storage.
+     * @param  bool  $privacyMode  When true, sends X-Privacy-Mode: 1 to
+     *                             suppress payload storage.
      * @return BinaryResponse Always binary — barcode endpoint does not support base64.
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
@@ -138,13 +143,16 @@ final class UtilitiesService extends AbstractService
         float|int|null $widthFactor = null,
         bool $privacyMode = false,
     ): BinaryResponse {
+        if ($privacyMode) {
+            $this->withPrivacyMode();
+        }
+
         $payload = $this->compact([
             'data' => $data,
             'type' => $type,
             'format' => $format,
             'height' => $height,
             'width_factor' => $widthFactor,
-            'privacy_mode' => $privacyMode ?: null,
         ]);
 
         /** @var BinaryResponse $response */
@@ -180,8 +188,9 @@ final class UtilitiesService extends AbstractService
      *                          complex templates with quotes, newlines, and special characters to
      *                          avoid JSON escaping issues.
      * @param  bool  $privacyMode
-     *                             When true, the raw HTML content and PDF metadata are excluded from
-     *                             api_payload_logs. Use for sensitive documents (invoices, contracts, PII).
+     *                             When true, sends X-Privacy-Mode: 1 so raw HTML content and PDF metadata
+     *                             are excluded from api_payload_logs. Use for sensitive documents (invoices,
+     *                             contracts, PII).
      * @return ApiResponse|BinaryResponse
      *                                    - BinaryResponse when $responseType is 'binary'.
      *                                    Save with: $response->saveAs('/tmp/invoice.pdf')
@@ -235,6 +244,10 @@ final class UtilitiesService extends AbstractService
         bool $isBase64 = false,
         bool $privacyMode = false,
     ): ApiResponse|BinaryResponse {
+        if ($privacyMode) {
+            $this->withPrivacyMode();
+        }
+
         $payload = $this->compact([
             'html' => $html,
             'is_base64' => $isBase64 ?: null, // omit if false to use server default
@@ -242,7 +255,6 @@ final class UtilitiesService extends AbstractService
             'page_size' => $pageSize,
             'orientation' => $orientation,
             'margins' => $margins,
-            'privacy_mode' => $privacyMode ?: null,
         ]);
 
         return $this->post('/utilities/pdf/generate', $payload);
@@ -270,7 +282,8 @@ final class UtilitiesService extends AbstractService
      * @param  array{top?: float, right?: float, bottom?: float, left?: float}|null  $margins
      *                                                                                         Custom page margins in millimetres.
      * @param  bool  $privacyMode
-     *                             Suppress payload storage in observability logs.
+     *                             When true, sends X-Privacy-Mode: 1 to suppress payload storage in
+     *                             observability logs.
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
