@@ -8,6 +8,7 @@ use Avraapi\Apix\Responses\ApiResponse;
 use Avraapi\Apix\Responses\BinaryResponse;
 use Avraapi\Apix\Services\CurrencyService;
 use Avraapi\Apix\Services\LocationService;
+use Avraapi\Apix\Services\PaymentService;
 use Avraapi\Apix\Services\SecurityService;
 use Avraapi\Apix\Services\SmsService;
 use Avraapi\Apix\Services\UtilitiesService;
@@ -61,11 +62,17 @@ final class ApixClient
     private readonly HttpClient $http;
 
     // ── Lazily instantiated service instances ─────────────────────────────────
-    private ?LocationService  $locationService  = null;
-    private ?SmsService       $smsService       = null;
+    private ?LocationService $locationService = null;
+
+    private ?SmsService $smsService = null;
+
     private ?UtilitiesService $utilitiesService = null;
-    private ?SecurityService  $securityService  = null;
-    private ?CurrencyService  $currencyService  = null;
+
+    private ?SecurityService $securityService = null;
+
+    private ?CurrencyService $currencyService = null;
+
+    private ?PaymentService $paymentService = null;
 
     /**
      * Create a new APIX client.
@@ -97,7 +104,7 @@ final class ApixClient
     public function __construct(array $config = [])
     {
         $this->config = new Config($config);
-        $this->http   = new HttpClient($this->config);
+        $this->http = new HttpClient($this->config);
     }
 
     // ── Service accessors (lazy-init, fluent) ─────────────────────────────────
@@ -189,6 +196,12 @@ final class ApixClient
         return $this->currencyService ??= new CurrencyService($this->http);
     }
 
+    /** Access the server-side Universal Payment Gateway API. */
+    public function payment(): PaymentService
+    {
+        return $this->paymentService ??= new PaymentService($this->http);
+    }
+
     // ── Universal Call ────────────────────────────────────────────────────────
 
     /**
@@ -201,19 +214,17 @@ final class ApixClient
      * Supported methods: 'POST' (APIX gateway uses POST for all operations).
      * Pass other methods for future-proofing; only POST is currently dispatched.
      *
-     * @param  string                $method   HTTP method (case-insensitive, e.g. 'POST').
-     * @param  string                $path     Endpoint path in any of the supported formats:
-     *                                           - 'sms/send'
-     *                                           - '/sms/send'
-     *                                           - '/api/v1/sms/send'
-     *                                           - 'https://avraapi.com/api/v1/sms/send'
+     * @param  string  $method  HTTP method (case-insensitive, e.g. 'POST').
+     * @param  string  $path  Endpoint path in any of the supported formats:
+     *                        - 'sms/send'
+     *                        - '/sms/send'
+     *                        - '/api/v1/sms/send'
+     *                        - 'https://avraapi.com/api/v1/sms/send'
      * @param  array<string, mixed>  $payload  JSON-serializable request body.
      *
-     * @return ApiResponse|BinaryResponse
-     *
-     * @throws \Avraapi\Apix\Exceptions\ApixException        On any API-level error.
+     * @throws \Avraapi\Apix\Exceptions\ApixException On any API-level error.
      * @throws \Avraapi\Apix\Exceptions\ApixNetworkException On transport failure.
-     * @throws \InvalidArgumentException                     On unsupported HTTP method.
+     * @throws \InvalidArgumentException On unsupported HTTP method.
      *
      * Example:
      *   $response = $apix->call('POST', 'payments/checkout', [
@@ -228,7 +239,7 @@ final class ApixClient
         array $payload = [],
     ): ApiResponse|BinaryResponse {
         return match (strtoupper(trim($method))) {
-            'GET'  => $this->http->get($path, $payload),
+            'GET' => $this->http->get($path, $payload),
             'POST' => $this->http->post($path, $payload),
             default => throw new \InvalidArgumentException(
                 "APIX SDK: Unsupported HTTP method '{$method}'. Supported methods: GET, POST."
