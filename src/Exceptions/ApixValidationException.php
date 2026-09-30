@@ -30,8 +30,8 @@ final class ApixValidationException extends ApixException
     private readonly array $validationErrors;
 
     /**
-     * @param  array<string, mixed>           $payload
-     * @param  array<string, list<string>>    $validationErrors
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, list<string>>  $validationErrors
      */
     public function __construct(
         string $message,
@@ -64,7 +64,7 @@ final class ApixValidationException extends ApixException
     public static function fromPayload(int $httpStatus, array $payload): static
     {
         $errorCode = (string) ($payload['error']['code'] ?? 'validation_error');
-        $message   = (string) ($payload['error']['message'] ?? 'Validation failed.');
+        $message = (string) ($payload['error']['message'] ?? 'Validation failed.');
         $requestId = isset($payload['request_id']) && is_string($payload['request_id'])
             ? $payload['request_id']
             : null;
@@ -79,12 +79,12 @@ final class ApixValidationException extends ApixException
             }
         }
 
-        return new static(
-            message:          $message,
-            httpStatus:       $httpStatus,
-            errorCode:        $errorCode,
-            requestId:        $requestId,
-            payload:          $payload,
+        return new self(
+            message: $message,
+            httpStatus: $httpStatus,
+            errorCode: $errorCode,
+            requestId: $requestId,
+            payload: $payload,
             validationErrors: $details,
         );
     }

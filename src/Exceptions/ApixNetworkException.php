@@ -22,12 +22,12 @@ final class ApixNetworkException extends ApixException
     public function __construct(string $message, ?\Throwable $previous = null)
     {
         parent::__construct(
-            message:    $message,
+            message: $message,
             httpStatus: 0,
-            errorCode:  'network_error',
-            requestId:  null,
-            payload:    [],
-            previous:   $previous,
+            errorCode: 'network_error',
+            requestId: null,
+            payload: [],
+            previous: $previous,
         );
     }
 }

@@ -34,11 +34,16 @@ final class Config
     public const DEFAULT_CONNECT_TIMEOUT = 10;
 
     public readonly string $projectKey;
+
     public readonly string $apiSecret;
+
     public readonly string $env;
+
     public readonly string $baseUrl;
-    public readonly int    $timeout;
-    public readonly int    $connectTimeout;
+
+    public readonly int $timeout;
+
+    public readonly int $connectTimeout;
 
     /**
      * @param  array<string, mixed>  $config  Explicit overrides (highest priority).
@@ -84,6 +89,18 @@ final class Config
         if (isset($config[$key]) && is_string($config[$key]) && $config[$key] !== '') {
             return $config[$key];
         }
+        $aliases = [
+            'APIX_PROJECT_KEY' => 'apiKey',
+            'APIX_API_SECRET' => 'apiSecret',
+            'APIX_ENV' => 'env',
+            'APIX_BASE_URL' => 'baseUrl',
+            'APIX_TIMEOUT' => 'timeout',
+            'APIX_CONNECT_TIMEOUT' => 'connectTimeout',
+        ];
+        $alias = $aliases[$key] ?? null;
+        if ($alias !== null && isset($config[$alias]) && is_scalar($config[$alias]) && (string) $config[$alias] !== '') {
+            return (string) $config[$alias];
+        }
 
         // 2. getenv() — works with dotenv, Docker, and native server env vars
         $env = getenv($key);
@@ -114,7 +131,7 @@ final class Config
     {
         return match (strtolower(trim($raw))) {
             'prod', 'production' => 'prod',
-            default              => 'dev',
+            default => 'dev',
         };
     }
 }

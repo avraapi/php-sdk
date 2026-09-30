@@ -54,10 +54,10 @@ class ApixException extends \RuntimeException
     ) {
         parent::__construct($message, $httpStatus, $previous);
 
-        $this->errorCode  = $errorCode;
-        $this->requestId  = $requestId;
+        $this->errorCode = $errorCode;
+        $this->requestId = $requestId;
         $this->httpStatus = $httpStatus;
-        $this->payload    = $payload;
+        $this->payload = $payload;
     }
 
     /**
@@ -108,17 +108,18 @@ class ApixException extends \RuntimeException
     public static function fromPayload(int $httpStatus, array $payload): static
     {
         $errorCode = (string) ($payload['error']['code'] ?? 'unknown_error');
-        $message   = (string) ($payload['error']['message'] ?? 'An unknown error occurred.');
+        $message = (string) ($payload['error']['message'] ?? 'An unknown error occurred.');
         $requestId = isset($payload['request_id']) && is_string($payload['request_id'])
             ? $payload['request_id']
             : null;
 
+        // @phpstan-ignore new.static
         return new static(
-            message:    $message,
+            message: $message,
             httpStatus: $httpStatus,
-            errorCode:  $errorCode,
-            requestId:  $requestId,
-            payload:    $payload,
+            errorCode: $errorCode,
+            requestId: $requestId,
+            payload: $payload,
         );
     }
 }

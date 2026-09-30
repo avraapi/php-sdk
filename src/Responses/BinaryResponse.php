@@ -48,10 +48,10 @@ final class BinaryResponse
     public readonly ?string $requestId;
 
     /**
-     * @param  string   $body         Raw binary content.
-     * @param  string   $contentType  MIME type from Content-Type header.
-     * @param  int      $httpStatus   HTTP response status code.
-     * @param  ?string  $requestId    Value of X-APIX-Request-ID header, if set.
+     * @param  string  $body  Raw binary content.
+     * @param  string  $contentType  MIME type from Content-Type header.
+     * @param  int  $httpStatus  HTTP response status code.
+     * @param  ?string  $requestId  Value of X-APIX-Request-ID header, if set.
      */
     public function __construct(
         string $body,
@@ -59,11 +59,11 @@ final class BinaryResponse
         int $httpStatus = 200,
         ?string $requestId = null,
     ) {
-        $this->body        = $body;
+        $this->body = $body;
         $this->contentType = $contentType;
-        $this->httpStatus  = $httpStatus;
-        $this->requestId   = $requestId;
-        $this->size        = strlen($body);
+        $this->httpStatus = $httpStatus;
+        $this->requestId = $requestId;
+        $this->size = strlen($body);
     }
 
     /**
@@ -72,26 +72,25 @@ final class BinaryResponse
      * Creates intermediate directories if they do not exist.
      *
      * @param  string  $path  Absolute or relative filesystem path.
+     * @return string The resolved absolute path of the saved file.
      *
      * @throws \RuntimeException When the directory cannot be created or the file cannot be written.
-     *
-     * @return string  The resolved absolute path of the saved file.
      */
     public function saveAs(string $path): string
     {
         $absolutePath = $path;
 
         // Resolve relative paths against the current working directory
-        if (!str_starts_with($path, '/') && !preg_match('/^[a-zA-Z]:[\/\\\\]/', $path)) {
+        if (! str_starts_with($path, '/') && ! preg_match('/^[a-zA-Z]:[\/\\\\]/', $path)) {
             $absolutePath = rtrim((string) getcwd(), DIRECTORY_SEPARATOR)
-                . DIRECTORY_SEPARATOR
-                . ltrim($path, DIRECTORY_SEPARATOR);
+                .DIRECTORY_SEPARATOR
+                .ltrim($path, DIRECTORY_SEPARATOR);
         }
 
         $directory = dirname($absolutePath);
 
-        if (!is_dir($directory)) {
-            if (!mkdir($directory, 0755, true) && !is_dir($directory)) {
+        if (! is_dir($directory)) {
+            if (! mkdir($directory, 0755, true) && ! is_dir($directory)) {
                 throw new \RuntimeException(
                     "APIX SDK: Failed to create directory '{$directory}'. Check filesystem permissions."
                 );

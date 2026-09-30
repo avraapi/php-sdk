@@ -60,15 +60,15 @@ final class ApiResponse
     public readonly int $httpStatus;
 
     /**
-     * @param  array<string, mixed>  $raw        Full decoded JSON body.
-     * @param  int                   $httpStatus  HTTP response status code.
+     * @param  array<string, mixed>  $raw  Full decoded JSON body.
+     * @param  int  $httpStatus  HTTP response status code.
      */
     public function __construct(array $raw, int $httpStatus = 200)
     {
-        $this->raw        = $raw;
+        $this->raw = $raw;
         $this->httpStatus = $httpStatus;
-        $this->success    = (bool) ($raw['success'] ?? true);
-        $this->requestId  = isset($raw['request_id']) && is_string($raw['request_id'])
+        $this->success = (bool) ($raw['success'] ?? true);
+        $this->requestId = isset($raw['request_id']) && is_string($raw['request_id'])
             ? $raw['request_id']
             : '';
 
@@ -93,7 +93,6 @@ final class ApiResponse
      *   $response->get('data.send_method')
      *
      * @param  mixed  $default  Value to return when the key is not found.
-     * @return mixed
      */
     public function get(string $dotPath, mixed $default = null): mixed
     {
@@ -135,14 +134,14 @@ final class ApiResponse
      * Recursively walk $array following the $segments path.
      *
      * @param  array<string, mixed>  $array
-     * @param  list<string>          $segments
+     * @param  list<string>  $segments
      */
     private function dig(array $array, array $segments): mixed
     {
         $current = $array;
 
         foreach ($segments as $segment) {
-            if (!is_array($current) || !array_key_exists($segment, $current)) {
+            if (! is_array($current) || ! array_key_exists($segment, $current)) {
                 return null;
             }
             $current = $current[$segment];

@@ -11,6 +11,10 @@ use Avraapi\Apix\Exceptions\ApixNetworkException;
 use Avraapi\Apix\Exceptions\ApixRateLimitException;
 use Avraapi\Apix\Exceptions\ApixServiceUnavailableException;
 use Avraapi\Apix\Exceptions\ApixValidationException;
+use Avraapi\Apix\Exceptions\PaymentAccessException;
+use Avraapi\Apix\Exceptions\PaymentConfigurationException;
+use Avraapi\Apix\Exceptions\PaymentProviderException;
+use Avraapi\Apix\Exceptions\PaymentVerificationException;
 use Avraapi\Apix\Responses\ApiResponse;
 use Avraapi\Apix\Responses\BinaryResponse;
 use GuzzleHttp\Client as GuzzleClient;
@@ -53,13 +57,13 @@ final class HttpClient
     public function __construct(private readonly Config $config)
     {
         $this->guzzle = new GuzzleClient([
-            'timeout'         => $config->timeout,
+            'timeout' => $config->timeout,
             'connect_timeout' => $config->connectTimeout,
-            'http_errors'     => false, // We handle errors manually for rich exceptions
-            'headers'         => [
-                'Accept'       => 'application/json, image/png, image/svg+xml, application/pdf',
+            'http_errors' => false, // We handle errors manually for rich exceptions
+            'headers' => [
+                'Accept' => 'application/json, image/png, image/svg+xml, application/pdf',
                 'Content-Type' => 'application/json',
-                'User-Agent'   => 'avraapi/php-sdk/1.0.0 PHP/' . PHP_VERSION,
+                'User-Agent' => 'avraapi/php-sdk/'.SdkVersion::VERSION.' PHP/'.PHP_VERSION,
             ],
         ]);
     }
@@ -69,18 +73,18 @@ final class HttpClient
     /**
      * Execute a POST request and return a typed response.
      *
-     * @param  array<string, mixed>  $payload   JSON-serializable request body.
-     * @param  array<string, string> $headers   Additional per-request headers.
+     * @param  array<string, mixed>  $payload  JSON-serializable request body.
+     * @param  array<string, string>  $headers  Additional per-request headers.
      *
-     * @throws ApixException            On any API-level error.
-     * @throws ApixNetworkException     On transport-level failure.
+     * @throws ApixException On any API-level error.
+     * @throws ApixNetworkException On transport-level failure.
      */
     public function post(
         string $path,
         array $payload = [],
         array $headers = [],
     ): ApiResponse|BinaryResponse {
-        $uri          = $this->normalizePath($path);
+        $uri = $this->normalizePath($path);
         $mergedHeaders = array_merge($this->buildAuthHeaders(), $headers);
 
         if ($this->providerOverride !== null) {
@@ -91,13 +95,13 @@ final class HttpClient
         try {
             $response = $this->guzzle->post($uri, [
                 RequestOptions::HEADERS => $mergedHeaders,
-                RequestOptions::JSON    => $payload,
+                RequestOptions::JSON => $payload,
             ]);
         } catch (ConnectException $e) {
             throw new ApixNetworkException(
-                message:  "Could not connect to APIX gateway at '{$uri}'. " .
-                          "Check APIX_BASE_URL and ensure the server is reachable. " .
-                          "Original error: " . $e->getMessage(),
+                message: "Could not connect to APIX gateway at '{$uri}'. ".
+                          'Check APIX_BASE_URL and ensure the server is reachable. '.
+                          'Original error: '.$e->getMessage(),
                 previous: $e,
             );
         } catch (RequestException $e) {
@@ -105,10 +109,11 @@ final class HttpClient
             if ($e->hasResponse()) {
                 /** @var ResponseInterface $failResponse */
                 $failResponse = $e->getResponse();
+
                 return $this->handleResponse($failResponse);
             }
             throw new ApixNetworkException(
-                message:  'APIX request failed without a server response: ' . $e->getMessage(),
+                message: 'APIX request failed without a server response: '.$e->getMessage(),
                 previous: $e,
             );
         }
@@ -122,18 +127,18 @@ final class HttpClient
      * Used by endpoints that accept path parameters instead of JSON bodies
      * (e.g. currency conversion endpoints).
      *
-     * @param  array<string, string>  $query    Optional query string parameters.
+     * @param  array<string, string>  $query  Optional query string parameters.
      * @param  array<string, string>  $headers  Additional per-request headers.
      *
-     * @throws ApixException            On any API-level error.
-     * @throws ApixNetworkException     On transport-level failure.
+     * @throws ApixException On any API-level error.
+     * @throws ApixNetworkException On transport-level failure.
      */
     public function get(
         string $path,
         array $query = [],
         array $headers = [],
     ): ApiResponse|BinaryResponse {
-        $uri           = $this->normalizePath($path);
+        $uri = $this->normalizePath($path);
         $mergedHeaders = array_merge($this->buildAuthHeaders(), $headers);
 
         if ($this->providerOverride !== null) {
@@ -144,25 +149,60 @@ final class HttpClient
         try {
             $response = $this->guzzle->get($uri, [
                 RequestOptions::HEADERS => $mergedHeaders,
-                RequestOptions::QUERY   => $query,
+                RequestOptions::QUERY => $query,
             ]);
         } catch (ConnectException $e) {
             throw new ApixNetworkException(
-                message:  "Could not connect to APIX gateway at '{$uri}'. " .
-                          "Check APIX_BASE_URL and ensure the server is reachable. " .
-                          "Original error: " . $e->getMessage(),
+                message: "Could not connect to APIX gateway at '{$uri}'. ".
+                          'Check APIX_BASE_URL and ensure the server is reachable. '.
+                          'Original error: '.$e->getMessage(),
                 previous: $e,
             );
         } catch (RequestException $e) {
             if ($e->hasResponse()) {
                 /** @var ResponseInterface $failResponse */
                 $failResponse = $e->getResponse();
+
                 return $this->handleResponse($failResponse);
             }
             throw new ApixNetworkException(
-                message:  'APIX request failed without a server response: ' . $e->getMessage(),
+                message: 'APIX request failed without a server response: '.$e->getMessage(),
                 previous: $e,
             );
+        }
+
+        return $this->handleResponse($response);
+    }
+
+    /**
+     * Execute a PUT request and return a typed response.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, string>  $headers
+     */
+    public function put(string $path, array $payload = [], array $headers = []): ApiResponse|BinaryResponse
+    {
+        $uri = $this->normalizePath($path);
+        $mergedHeaders = array_merge($this->buildAuthHeaders(), $headers);
+        if ($this->providerOverride !== null) {
+            $mergedHeaders['X-Provider-Override'] = $this->providerOverride;
+            $this->providerOverride = null;
+        }
+        try {
+            $response = $this->guzzle->put($uri, [
+                RequestOptions::HEADERS => $mergedHeaders,
+                RequestOptions::JSON => $payload,
+            ]);
+        } catch (ConnectException $e) {
+            throw new ApixNetworkException("Could not connect to APIX gateway at '{$uri}'. Check APIX_BASE_URL and ensure the server is reachable. Original error: {$e->getMessage()}", previous: $e);
+        } catch (RequestException $e) {
+            if ($e->hasResponse()) {
+                /** @var ResponseInterface $failResponse */
+                $failResponse = $e->getResponse();
+
+                return $this->handleResponse($failResponse);
+            }
+            throw new ApixNetworkException('APIX request failed without a server response: '.$e->getMessage(), previous: $e);
         }
 
         return $this->handleResponse($response);
@@ -190,18 +230,19 @@ final class HttpClient
      */
     private function handleResponse(ResponseInterface $response): ApiResponse|BinaryResponse
     {
-        $status      = $response->getStatusCode();
+        $status = $response->getStatusCode();
         $contentType = $this->extractContentType($response);
-        $body        = (string) $response->getBody();
+        $body = (string) $response->getBody();
 
         // ── Binary success response ───────────────────────────────────────────
         if ($status >= 200 && $status < 300 && $this->isBinary($contentType)) {
             $requestId = $response->getHeaderLine('X-APIX-Request-ID') ?: null;
+
             return new BinaryResponse(
-                body:        $body,
+                body: $body,
                 contentType: $contentType,
-                httpStatus:  $status,
-                requestId:   $requestId !== '' ? $requestId : null,
+                httpStatus: $status,
+                requestId: $requestId !== '' ? $requestId : null,
             );
         }
 
@@ -226,13 +267,27 @@ final class HttpClient
      */
     private function mapException(int $httpStatus, array $payload): ApixException
     {
+        $code = (string) ($payload['error']['code'] ?? '');
+        if (str_starts_with($code, 'payment_callback_')) {
+            return PaymentVerificationException::fromPayload($httpStatus, $payload);
+        }
+        if (str_starts_with($code, 'upg_') || $code === 'payment_configuration_not_available' || $code === 'project_paused') {
+            return PaymentAccessException::fromPayload($httpStatus, $payload);
+        }
+        if (str_starts_with($code, 'payment_configuration') || $code === 'payment_gateway_not_available' || $code === 'payment_mode_not_available') {
+            return PaymentConfigurationException::fromPayload($httpStatus, $payload);
+        }
+        if (str_starts_with($code, 'payment_')) {
+            return PaymentProviderException::fromPayload($httpStatus, $payload);
+        }
+
         return match (true) {
-            $httpStatus === 401                       => ApixAuthenticationException::fromPayload($httpStatus, $payload),
-            $httpStatus === 402                       => ApixInsufficientFundsException::fromPayload($httpStatus, $payload),
-            $httpStatus === 422                       => ApixValidationException::fromPayload($httpStatus, $payload),
-            $httpStatus === 429                       => ApixRateLimitException::fromPayload($httpStatus, $payload),
-            $httpStatus === 503                       => ApixServiceUnavailableException::fromPayload($httpStatus, $payload),
-            default                                   => ApixException::fromPayload($httpStatus, $payload),
+            $httpStatus === 401 => ApixAuthenticationException::fromPayload($httpStatus, $payload),
+            $httpStatus === 402 => ApixInsufficientFundsException::fromPayload($httpStatus, $payload),
+            $httpStatus === 422 => ApixValidationException::fromPayload($httpStatus, $payload),
+            $httpStatus === 429 => ApixRateLimitException::fromPayload($httpStatus, $payload),
+            $httpStatus === 503 => ApixServiceUnavailableException::fromPayload($httpStatus, $payload),
+            default => ApixException::fromPayload($httpStatus, $payload),
         };
     }
 
@@ -276,7 +331,7 @@ final class HttpClient
         $path = ltrim($path, '/');
 
         // Step 4 — Build final URI
-        return $baseUrl . '/' . $path;
+        return $baseUrl.'/'.$path;
     }
 
     // ── Header builders ───────────────────────────────────────────────────────
@@ -294,9 +349,9 @@ final class HttpClient
     private function buildAuthHeaders(): array
     {
         return [
-            'X-API-KEY'    => $this->config->projectKey,
+            'X-API-KEY' => $this->config->projectKey,
             'X-API-SECRET' => $this->config->apiSecret,
-            'X-ENV'        => $this->config->env,
+            'X-ENV' => $this->config->env,
         ];
     }
 
@@ -310,6 +365,7 @@ final class HttpClient
     private function extractContentType(ResponseInterface $response): string
     {
         $header = $response->getHeaderLine('Content-Type');
+
         return strtolower(trim(explode(';', $header)[0]));
     }
 
@@ -323,6 +379,7 @@ final class HttpClient
                 return true;
             }
         }
+
         return false;
     }
 
@@ -338,10 +395,10 @@ final class HttpClient
     {
         if ($body === '') {
             return [
-                'success'    => false,
+                'success' => false,
                 'request_id' => null,
-                'error'      => [
-                    'code'    => 'empty_response',
+                'error' => [
+                    'code' => 'empty_response',
                     'message' => "The APIX gateway returned an empty body with HTTP {$httpStatus}.",
                 ],
             ];
@@ -351,12 +408,12 @@ final class HttpClient
             $decoded = json_decode($body, associative: true, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             return [
-                'success'    => false,
+                'success' => false,
                 'request_id' => null,
-                'error'      => [
-                    'code'    => 'invalid_json_response',
-                    'message' => "The APIX gateway returned a non-JSON body with HTTP {$httpStatus}. " .
-                                 "This may indicate a reverse-proxy error or server misconfiguration.",
+                'error' => [
+                    'code' => 'invalid_json_response',
+                    'message' => "The APIX gateway returned a non-JSON body with HTTP {$httpStatus}. ".
+                                 'This may indicate a reverse-proxy error or server misconfiguration.',
                 ],
             ];
         }
