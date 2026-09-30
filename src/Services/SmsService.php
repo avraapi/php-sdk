@@ -27,14 +27,13 @@ final class SmsService extends AbstractService
      *
      * Wraps: POST /sms/send   { send_method: "single" }
      *
-     * @param  string  $to       Sri Lankan mobile number (e.g. '0771234567').
+     * @param  string  $to  Sri Lankan mobile number (e.g. '0771234567').
      * @param  string  $message  Text content to deliver.
-     *
-     * @return ApiResponse  Success envelope. Key fields:
-     *   $response->data['send_method']       — 'single'
-     *   $response->data['message_count']     — int, should be 1
-     *   $response->data['credits_charged']   — int
-     *   $response->data['provider_response'] — array from QuickSend
+     * @return ApiResponse Success envelope. Key fields:
+     *                     $response->data['send_method']       — 'single'
+     *                     $response->data['message_count']     — int, should be 1
+     *                     $response->data['credits_charged']   — int
+     *                     $response->data['provider_response'] — array from QuickSend
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
@@ -55,8 +54,8 @@ final class SmsService extends AbstractService
         /** @var ApiResponse $response */
         $response = $this->post('/sms/send', [
             'send_method' => 'single',
-            'to'          => $to,
-            'message'     => $message,
+            'to' => $to,
+            'message' => $message,
         ]);
 
         return $response;
@@ -68,15 +67,14 @@ final class SmsService extends AbstractService
      * Wraps: POST /sms/send   { send_method: "bulk_same" }
      *
      * @param  list<string>  $recipients  Array of Sri Lankan mobile numbers (1–10,000).
-     * @param  string        $message     Shared message body for all recipients.
-     * @param  bool          $checkCost   When true, QuickSend returns pricing info
-     *                                    without dispatching the messages.
-     *
-     * @return ApiResponse  Success envelope. Key fields:
-     *   $response->data['send_method']       — 'bulk_same'
-     *   $response->data['message_count']     — number of messages dispatched
-     *   $response->data['credits_charged']   — int
-     *   $response->data['provider_response'] — array from QuickSend
+     * @param  string  $message  Shared message body for all recipients.
+     * @param  bool  $checkCost  When true, QuickSend returns pricing info
+     *                           without dispatching the messages.
+     * @return ApiResponse Success envelope. Key fields:
+     *                     $response->data['send_method']       — 'bulk_same'
+     *                     $response->data['message_count']     — number of messages dispatched
+     *                     $response->data['credits_charged']   — int
+     *                     $response->data['provider_response'] — array from QuickSend
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
@@ -100,9 +98,9 @@ final class SmsService extends AbstractService
         /** @var ApiResponse $response */
         $response = $this->post('/sms/send', [
             'send_method' => 'bulk_same',
-            'recipients'  => array_values($recipients),
-            'message'     => $message,
-            'check_cost'  => $checkCost,
+            'recipients' => array_values($recipients),
+            'message' => $message,
+            'check_cost' => $checkCost,
         ]);
 
         return $response;
@@ -120,8 +118,7 @@ final class SmsService extends AbstractService
      * Maximum 20 entries per request (gateway limit).
      *
      * @param  list<array{to: string, msg: string}>  $messages  Per-recipient message list.
-     *
-     * @return ApiResponse  Success envelope.
+     * @return ApiResponse Success envelope.
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
@@ -141,7 +138,7 @@ final class SmsService extends AbstractService
         /** @var ApiResponse $response */
         $response = $this->post('/sms/send', [
             'send_method' => 'bulk_different',
-            'msg_list'    => array_values($messages),
+            'msg_list' => array_values($messages),
         ]);
 
         return $response;
@@ -154,10 +151,10 @@ final class SmsService extends AbstractService
      *
      * This request is always FREE — no wallet credits are deducted.
      *
-     * @return ApiResponse  Success envelope. Key fields:
-     *   $response->data['source']            — 'quicksend_direct' or 'apix_wallet'
-     *   $response->data['balance_formatted'] — Human-readable balance string
-     *   $response->data['provider_response'] — Raw QuickSend response (nullable)
+     * @return ApiResponse Success envelope. Key fields:
+     *                     $response->data['source']            — 'quicksend_direct' or 'apix_wallet'
+     *                     $response->data['balance_formatted'] — Human-readable balance string
+     *                     $response->data['provider_response'] — Raw QuickSend response (nullable)
      *
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
      * @throws \Avraapi\Apix\Exceptions\ApixException

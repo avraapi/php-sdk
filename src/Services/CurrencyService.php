@@ -28,16 +28,16 @@ class CurrencyService extends AbstractService
      * Wraps: GET /utility/currency/codes
      * Provider: avraapi_multi_currency
      *
-     * @return ApiResponse  The `data` array contains:
-     *   - count (int)   — Total number of active currencies.
-     *   - codes (array) — List of objects, each with:
-     *       - code (string) — ISO 4217 currency code (e.g. 'USD', 'EUR', 'LKR').
-     *       - name (string) — Human-readable currency name.
+     * @return ApiResponse The `data` array contains:
+     *                     - count (int)   — Total number of active currencies.
+     *                     - codes (array) — List of objects, each with:
+     *                     - code (string) — ISO 4217 currency code (e.g. 'USD', 'EUR', 'LKR').
+     *                     - name (string) — Human-readable currency name.
      *
-     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException   401
-     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException        429
-     * @throws \Avraapi\Apix\Exceptions\ApixException                 Catch-all.
-     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException          Transport failure.
+     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException 401
+     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException 429
+     * @throws \Avraapi\Apix\Exceptions\ApixException Catch-all.
+     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException Transport failure.
      *
      * Example:
      *   $result = $apix->currency()->getCodes();
@@ -65,17 +65,16 @@ class CurrencyService extends AbstractService
      *
      * @param  string  $base  ISO 4217 base currency code (e.g. 'USD', 'EUR').
      *                        Case-insensitive — automatically uppercased.
+     * @return ApiResponse The `data` array contains:
+     *                     - base         (string) — The base currency code used.
+     *                     - last_updated (string) — ISO 8601 timestamp of the last rate ingestion.
+     *                     - rates        (array)  — Associative array: { "EUR": 0.89, "GBP": 0.76, ... }
      *
-     * @return ApiResponse  The `data` array contains:
-     *   - base         (string) — The base currency code used.
-     *   - last_updated (string) — ISO 8601 timestamp of the last rate ingestion.
-     *   - rates        (array)  — Associative array: { "EUR": 0.89, "GBP": 0.76, ... }
-     *
-     * @throws \Avraapi\Apix\Exceptions\ApixValidationException       400 — Invalid currency code.
-     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException   401
-     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException        429
-     * @throws \Avraapi\Apix\Exceptions\ApixException                 Catch-all.
-     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException          Transport failure.
+     * @throws \Avraapi\Apix\Exceptions\ApixValidationException 400 — Invalid currency code.
+     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException 401
+     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException 429
+     * @throws \Avraapi\Apix\Exceptions\ApixException Catch-all.
+     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException Transport failure.
      *
      * Example:
      *   $result = $apix->currency()->getLatestRates('USD');
@@ -98,20 +97,19 @@ class CurrencyService extends AbstractService
      * Wraps: GET /utility/currency/pair/{base}/{target}
      * Provider: avraapi_multi_currency
      *
-     * @param  string  $base    Source currency code (e.g. 'USD').
+     * @param  string  $base  Source currency code (e.g. 'USD').
      * @param  string  $target  Target currency code (e.g. 'EUR').
+     * @return ApiResponse The `data` array contains:
+     *                     - base         (string) — Source currency code.
+     *                     - target       (string) — Target currency code.
+     *                     - rate         (float)  — Conversion rate (8 decimal places).
+     *                     - last_updated (string) — ISO 8601 timestamp.
      *
-     * @return ApiResponse  The `data` array contains:
-     *   - base         (string) — Source currency code.
-     *   - target       (string) — Target currency code.
-     *   - rate         (float)  — Conversion rate (8 decimal places).
-     *   - last_updated (string) — ISO 8601 timestamp.
-     *
-     * @throws \Avraapi\Apix\Exceptions\ApixValidationException       400 — Invalid currency code.
-     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException   401
-     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException        429
-     * @throws \Avraapi\Apix\Exceptions\ApixException                 Catch-all.
-     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException          Transport failure.
+     * @throws \Avraapi\Apix\Exceptions\ApixValidationException 400 — Invalid currency code.
+     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException 401
+     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException 429
+     * @throws \Avraapi\Apix\Exceptions\ApixException Catch-all.
+     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException Transport failure.
      *
      * Example:
      *   $result = $apix->currency()->getPairRate('USD', 'EUR');
@@ -119,7 +117,7 @@ class CurrencyService extends AbstractService
      */
     public function getPairRate(string $base, string $target): ApiResponse
     {
-        $base   = strtoupper(trim($base));
+        $base = strtoupper(trim($base));
         $target = strtoupper(trim($target));
 
         /** @var ApiResponse */
@@ -134,23 +132,22 @@ class CurrencyService extends AbstractService
      * Wraps: GET /utility/currency/pair/{base}/{target}/{amount}
      * Provider: avraapi_multi_currency
      *
-     * @param  string  $base    Source currency code (e.g. 'USD').
+     * @param  string  $base  Source currency code (e.g. 'USD').
      * @param  string  $target  Target currency code (e.g. 'LKR').
-     * @param  float   $amount  The amount to convert (must be > 0).
+     * @param  float  $amount  The amount to convert (must be > 0).
+     * @return ApiResponse The `data` array contains:
+     *                     - base              (string) — Source currency code.
+     *                     - target            (string) — Target currency code.
+     *                     - rate              (float)  — Conversion rate used.
+     *                     - amount            (float)  — The original amount.
+     *                     - conversion_result (float)  — The converted amount (6 decimal places).
+     *                     - last_updated      (string) — ISO 8601 timestamp.
      *
-     * @return ApiResponse  The `data` array contains:
-     *   - base              (string) — Source currency code.
-     *   - target            (string) — Target currency code.
-     *   - rate              (float)  — Conversion rate used.
-     *   - amount            (float)  — The original amount.
-     *   - conversion_result (float)  — The converted amount (6 decimal places).
-     *   - last_updated      (string) — ISO 8601 timestamp.
-     *
-     * @throws \Avraapi\Apix\Exceptions\ApixValidationException       400/422 — Invalid code or amount.
-     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException   401
-     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException        429
-     * @throws \Avraapi\Apix\Exceptions\ApixException                 Catch-all.
-     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException          Transport failure.
+     * @throws \Avraapi\Apix\Exceptions\ApixValidationException 400/422 — Invalid code or amount.
+     * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException 401
+     * @throws \Avraapi\Apix\Exceptions\ApixRateLimitException 429
+     * @throws \Avraapi\Apix\Exceptions\ApixException Catch-all.
+     * @throws \Avraapi\Apix\Exceptions\ApixNetworkException Transport failure.
      *
      * Example:
      *   $result = $apix->currency()->convert('USD', 'LKR', 100.00);
@@ -164,7 +161,7 @@ class CurrencyService extends AbstractService
      */
     public function convert(string $base, string $target, float $amount): ApiResponse
     {
-        $base   = strtoupper(trim($base));
+        $base = strtoupper(trim($base));
         $target = strtoupper(trim($target));
 
         /** @var ApiResponse */

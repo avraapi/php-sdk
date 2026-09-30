@@ -26,8 +26,7 @@ abstract class AbstractService
      *
      * @param  string  $providerCode  The provider's machine-readable code
      *                                (e.g. 'quicksend', 'maxmind', 'apix_qr').
-     *
-     * @return static  Fluent — returns the same service instance.
+     * @return static Fluent — returns the same service instance.
      *
      * Example:
      *   $apix->sms()->withProvider('quicksend')->sendSingle('+94771234567', 'Hello!');
@@ -35,13 +34,14 @@ abstract class AbstractService
     public function withProvider(string $providerCode): static
     {
         $this->http->setProviderOverride(trim($providerCode));
+
         return $this;
     }
 
     /**
      * Dispatch a POST request via the shared HTTP client.
      *
-     * @param  array<string, mixed>   $payload  JSON request body.
+     * @param  array<string, mixed>  $payload  JSON request body.
      * @param  array<string, string>  $headers  Additional headers for this request only.
      */
     protected function post(
@@ -58,7 +58,7 @@ abstract class AbstractService
      * Used by endpoints that accept path parameters instead of JSON bodies
      * (e.g. currency conversion endpoints).
      *
-     * @param  array<string, string>  $query    Optional query string parameters.
+     * @param  array<string, string>  $query  Optional query string parameters.
      * @param  array<string, string>  $headers  Additional headers for this request only.
      */
     protected function get(

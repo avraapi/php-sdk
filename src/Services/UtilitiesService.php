@@ -30,20 +30,19 @@ final class UtilitiesService extends AbstractService
      * Wraps: POST /utilities/qr/generate
      * Provider: apix_qr
      *
-     * @param  string       $data             Text, URL, or BEGIN:VCARD payload.
-     * @param  string       $format           'png' (binary) | 'svg' (binary) | 'base64' (JSON).
-     *                                        Default: 'png'.
-     * @param  int|null     $size             Width and height in pixels (50–2000). Default: 300.
+     * @param  string  $data  Text, URL, or BEGIN:VCARD payload.
+     * @param  string  $format  'png' (binary) | 'svg' (binary) | 'base64' (JSON).
+     *                          Default: 'png'.
+     * @param  int|null  $size  Width and height in pixels (50–2000). Default: 300.
      * @param  string|null  $foregroundColor  6-digit hex color for dark modules (with or without #).
      * @param  string|null  $backgroundColor  6-digit hex color for background.
-     * @param  string|null  $logoUrl          Publicly reachable logo URL to embed at center.
-     * @param  int|null     $logoSizePercent  Logo size as % of QR image (5–40).
-     * @param  bool         $privacyMode      Suppress payload storage in observability logs.
-     *
+     * @param  string|null  $logoUrl  Publicly reachable logo URL to embed at center.
+     * @param  int|null  $logoSizePercent  Logo size as % of QR image (5–40).
+     * @param  bool  $privacyMode  Suppress payload storage in observability logs.
      * @return ApiResponse|BinaryResponse
-     *   - Returns BinaryResponse when $format is 'png' or 'svg'.
-     *   - Returns ApiResponse    when $format is 'base64'.
-     *     Access the data URI via: $response->data['data_uri']
+     *                                    - Returns BinaryResponse when $format is 'png' or 'svg'.
+     *                                    - Returns ApiResponse    when $format is 'base64'.
+     *                                    Access the data URI via: $response->data['data_uri']
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
@@ -83,14 +82,14 @@ final class UtilitiesService extends AbstractService
         bool $privacyMode = false,
     ): ApiResponse|BinaryResponse {
         $payload = $this->compact([
-            'data'             => $data,
-            'format'           => $format,
-            'size'             => $size,
+            'data' => $data,
+            'format' => $format,
+            'size' => $size,
             'foreground_color' => $foregroundColor,
             'background_color' => $backgroundColor,
-            'logo_url'         => $logoUrl,
+            'logo_url' => $logoUrl,
             'logo_size_percent' => $logoSizePercent,
-            'privacy_mode'     => $privacyMode ?: null, // omit if false to use server default
+            'privacy_mode' => $privacyMode ?: null, // omit if false to use server default
         ]);
 
         return $this->post('/utilities/qr/generate', $payload);
@@ -108,14 +107,13 @@ final class UtilitiesService extends AbstractService
      *   C128, C128A, C128B, C128C, EAN13, EAN8, UPCA, UPCE,
      *   C39, C39+, I25, ITF14, MSI, POSTNET
      *
-     * @param  string      $data          Data string to encode (max 80 chars).
-     * @param  string      $type          Barcode symbology (default: 'C128').
-     * @param  string      $format        'png' or 'svg' (default: 'png').
-     * @param  int|null    $height        Barcode height in pixels (20–300).
-     * @param  float|null  $widthFactor   Horizontal bar width multiplier (1–4).
-     * @param  bool        $privacyMode   Suppress payload storage.
-     *
-     * @return BinaryResponse  Always binary — barcode endpoint does not support base64.
+     * @param  string  $data  Data string to encode (max 80 chars).
+     * @param  string  $type  Barcode symbology (default: 'C128').
+     * @param  string  $format  'png' or 'svg' (default: 'png').
+     * @param  int|null  $height  Barcode height in pixels (20–300).
+     * @param  float|null  $widthFactor  Horizontal bar width multiplier (1–4).
+     * @param  bool  $privacyMode  Suppress payload storage.
+     * @return BinaryResponse Always binary — barcode endpoint does not support base64.
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
@@ -141,10 +139,10 @@ final class UtilitiesService extends AbstractService
         bool $privacyMode = false,
     ): BinaryResponse {
         $payload = $this->compact([
-            'data'         => $data,
-            'type'         => $type,
-            'format'       => $format,
-            'height'       => $height,
+            'data' => $data,
+            'type' => $type,
+            'format' => $format,
+            'height' => $height,
             'width_factor' => $widthFactor,
             'privacy_mode' => $privacyMode ?: null,
         ]);
@@ -163,40 +161,33 @@ final class UtilitiesService extends AbstractService
      * Wraps: POST /utilities/pdf/generate
      * Provider: apix_html2pdf
      *
-     * @param  string                                                                 $html
-     *   Raw HTML content to render (max 512 KB after decoding). Full <!DOCTYPE html>
-     *   documents and plain HTML fragments are both accepted.
-     *   When $isBase64 is true, this must be a Base64-encoded HTML string.
-     *
-     * @param  string                                                                 $responseType
-     *   'binary' — Returns BinaryResponse with raw PDF bytes (default).
-     *   'base64' — Returns ApiResponse with JSON containing base64-encoded PDF.
-     *
-     * @param  string                                                                 $pageSize
-     *   'A4' (default) | 'Letter' | 'Legal'
-     *
-     * @param  string                                                                 $orientation
-     *   'portrait' (default) | 'landscape'
-     *
+     * @param  string  $html
+     *                        Raw HTML content to render (max 512 KB after decoding). Full <!DOCTYPE html>
+     *                        documents and plain HTML fragments are both accepted.
+     *                        When $isBase64 is true, this must be a Base64-encoded HTML string.
+     * @param  string  $responseType
+     *                                'binary' — Returns BinaryResponse with raw PDF bytes (default).
+     *                                'base64' — Returns ApiResponse with JSON containing base64-encoded PDF.
+     * @param  string  $pageSize
+     *                            'A4' (default) | 'Letter' | 'Legal'
+     * @param  string  $orientation
+     *                               'portrait' (default) | 'landscape'
      * @param  array{top?: float, right?: float, bottom?: float, left?: float}|null  $margins
-     *   Custom page margins in millimetres. Keys: top, right, bottom, left.
-     *
-     * @param  bool                                                                   $isBase64
-     *   When true, the $html value is treated as a Base64-encoded HTML string.
-     *   The server decodes it before validation and rendering. Recommended for
-     *   complex templates with quotes, newlines, and special characters to
-     *   avoid JSON escaping issues.
-     *
-     * @param  bool                                                                   $privacyMode
-     *   When true, the raw HTML content and PDF metadata are excluded from
-     *   api_payload_logs. Use for sensitive documents (invoices, contracts, PII).
-     *
+     *                                                                                         Custom page margins in millimetres. Keys: top, right, bottom, left.
+     * @param  bool  $isBase64
+     *                          When true, the $html value is treated as a Base64-encoded HTML string.
+     *                          The server decodes it before validation and rendering. Recommended for
+     *                          complex templates with quotes, newlines, and special characters to
+     *                          avoid JSON escaping issues.
+     * @param  bool  $privacyMode
+     *                             When true, the raw HTML content and PDF metadata are excluded from
+     *                             api_payload_logs. Use for sensitive documents (invoices, contracts, PII).
      * @return ApiResponse|BinaryResponse
-     *   - BinaryResponse when $responseType is 'binary'.
-     *     Save with: $response->saveAs('/tmp/invoice.pdf')
-     *   - ApiResponse when $responseType is 'base64'.
-     *     Access with: $response->data['data']  (base64 string)
-     *     Media type:  $response->data['media_type']
+     *                                    - BinaryResponse when $responseType is 'binary'.
+     *                                    Save with: $response->saveAs('/tmp/invoice.pdf')
+     *                                    - ApiResponse when $responseType is 'base64'.
+     *                                    Access with: $response->data['data']  (base64 string)
+     *                                    Media type:  $response->data['media_type']
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
@@ -245,13 +236,13 @@ final class UtilitiesService extends AbstractService
         bool $privacyMode = false,
     ): ApiResponse|BinaryResponse {
         $payload = $this->compact([
-            'html'          => $html,
-            'is_base64'     => $isBase64 ?: null, // omit if false to use server default
+            'html' => $html,
+            'is_base64' => $isBase64 ?: null, // omit if false to use server default
             'response_type' => $responseType,
-            'page_size'     => $pageSize,
-            'orientation'   => $orientation,
-            'margins'       => $margins,
-            'privacy_mode'  => $privacyMode ?: null,
+            'page_size' => $pageSize,
+            'orientation' => $orientation,
+            'margins' => $margins,
+            'privacy_mode' => $privacyMode ?: null,
         ]);
 
         return $this->post('/utilities/pdf/generate', $payload);
@@ -268,25 +259,18 @@ final class UtilitiesService extends AbstractService
      * The server decodes the Base64 content before validation and rendering.
      * The 512 KB size limit applies to the decoded HTML, not the encoded payload.
      *
-     * @param  string                                                                 $html
-     *   Raw HTML content (NOT pre-encoded). This method encodes it for you.
-     *
-     * @param  string                                                                 $responseType
-     *   'binary' (default) | 'base64'
-     *
-     * @param  string                                                                 $pageSize
-     *   'A4' (default) | 'Letter' | 'Legal'
-     *
-     * @param  string                                                                 $orientation
-     *   'portrait' (default) | 'landscape'
-     *
+     * @param  string  $html
+     *                        Raw HTML content (NOT pre-encoded). This method encodes it for you.
+     * @param  string  $responseType
+     *                                'binary' (default) | 'base64'
+     * @param  string  $pageSize
+     *                            'A4' (default) | 'Letter' | 'Legal'
+     * @param  string  $orientation
+     *                               'portrait' (default) | 'landscape'
      * @param  array{top?: float, right?: float, bottom?: float, left?: float}|null  $margins
-     *   Custom page margins in millimetres.
-     *
-     * @param  bool                                                                   $privacyMode
-     *   Suppress payload storage in observability logs.
-     *
-     * @return ApiResponse|BinaryResponse
+     *                                                                                         Custom page margins in millimetres.
+     * @param  bool  $privacyMode
+     *                             Suppress payload storage in observability logs.
      *
      * @throws \Avraapi\Apix\Exceptions\ApixValidationException
      * @throws \Avraapi\Apix\Exceptions\ApixAuthenticationException
@@ -310,13 +294,13 @@ final class UtilitiesService extends AbstractService
         bool $privacyMode = false,
     ): ApiResponse|BinaryResponse {
         return $this->generatePdf(
-            html:         base64_encode($html),
+            html: base64_encode($html),
             responseType: $responseType,
-            pageSize:     $pageSize,
-            orientation:  $orientation,
-            margins:      $margins,
-            isBase64:     true,
-            privacyMode:  $privacyMode,
+            pageSize: $pageSize,
+            orientation: $orientation,
+            margins: $margins,
+            isBase64: true,
+            privacyMode: $privacyMode,
         );
     }
 
@@ -334,6 +318,6 @@ final class UtilitiesService extends AbstractService
      */
     private function compact(array $data): array
     {
-        return array_filter($data, fn(mixed $value): bool => $value !== null);
+        return array_filter($data, fn (mixed $value): bool => $value !== null);
     }
 }
